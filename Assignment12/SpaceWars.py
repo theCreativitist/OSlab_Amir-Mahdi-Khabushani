@@ -70,9 +70,10 @@ class Bullet(arcade.Sprite):
 
 class Enemy(arcade.Sprite):
     def __init__(self, speed):
-        super().__init__(":resources:images/space_shooter/playerShip1_orange.png")
-        self.width = 50
-        self.height = 50
+        super().__init__(":resources:images/space_shooter/playerShip3_orange.png")
+        self.width = 40
+        self.height = 40
+        self.angle = 180
         self.center_x = random.randint(self.width ,SCREEN_WIDTH - self.width)
         self.center_y = SCREEN_HEIGHT + self.height//2
         self.speed = speed
@@ -81,7 +82,7 @@ class Enemy(arcade.Sprite):
         self.center_y -= self.speed
 
     def play_sound(self):
-        arcade.play_sound(arcade.sound.Sound(':resources:sounds/hit1.wav'))
+        arcade.play_sound(arcade.sound.Sound(':resources:sounds/explosion1.wav'))
 
 
 
@@ -92,11 +93,12 @@ class Game(arcade.Window):
         self.me = SpaceCraft()
         self.enemies = []
         self.e_speed = 3
-        self.rand_time = 5
+        self.rand_time = 2
         self.start_time = time.time()
     
     def restart(self):
         self.enemies.clear()
+        self.e_speed = 3
         self.me = SpaceCraft()
         
 
@@ -126,7 +128,7 @@ class Game(arcade.Window):
             self.me.change_angle = 1
         elif symbol == arcade.key.RIGHT:
             self.me.change_angle = -1
-        if symbol == arcade.key.R:
+        elif symbol == arcade.key.R:
             self.restart()
 
     def on_key_release(self, symbol: int, modifiers: int):
@@ -153,6 +155,7 @@ class Game(arcade.Window):
                 if e.center_y < 0:
                     self.enemies.remove(e)
                     self.me.hearts.pop()
+                    arcade.play_sound(arcade.sound.Sound(':resources:sounds/gameover5.wav'), 0.2)
                 for b in self.me.bullets:
                     if arcade.check_for_collision(e,b):
                         e.play_sound()
