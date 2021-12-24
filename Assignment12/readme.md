@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 Salam Ostade aziz, File "SpaceWars.py" file asli bazi hast ke dar moede mogharar upload shode,\
 ama file "SpaceWars_advanced.py" file i hast ke baadan be khatere alagheie ke dashtam, task haye mojood dar tamrin ekhtiyari ro, hamrah ba chandin feature ezafe, behesh add kardam.
 
