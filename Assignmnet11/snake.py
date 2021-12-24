@@ -29,7 +29,7 @@ class Snake(arcade.Sprite):
             self.body.pop(0)
 
         self.decide_move()
-        
+
         if self.change_x > 0:
             self.center_x += self.speed
         elif self.change_x <0:
@@ -68,8 +68,8 @@ class Snake(arcade.Sprite):
             elif self.goal_x < self.center_x:
                 self.change_x = -1
                 self.change_y = 0
-        
-            
+
+
 
     def draw(self):
         arcade.draw_rectangle_filled(self.center_x, self.center_y, self.width, self.height, self.color)
@@ -77,7 +77,7 @@ class Snake(arcade.Sprite):
         for i in range(len(self.body)):
             arcade.draw_rectangle_filled(self.body[i][0], self.body[i][1], self.width, self.height, self.color)
 
-        
+
     def update_score(self, score):
         self.score += score
         return self.score
@@ -92,7 +92,7 @@ class Banana(arcade.Sprite):
         self.change_y = None
         self.center_x = random.randint(0,SCREEN_WIDTH)
         self.center_y = random.randint(0,SCREEN_HEIGHT)
-        
+
     def draw(self):
         arcade.draw_rectangle_filled(self.center_x, self.center_y, self.width, self.height, self.color)
 
@@ -111,7 +111,7 @@ class Poop(arcade.Sprite):
         self.change_y = None
         self.center_x = random.randint(0,SCREEN_WIDTH)
         self.center_y = random.randint(0,SCREEN_HEIGHT)
-        
+
     def draw(self):
         arcade.draw_rectangle_filled(self.center_x, self.center_y, self.width, self.height, self.color)
 
@@ -172,7 +172,7 @@ class Game(arcade.Window):
     def on_update(self, delta_time):
 
         self.snake.move()
-        
+
         if arcade.check_for_collision(self.snake, self.banana):
             self.banana.update()
             self.snake.observe(self.banana.center_x, self.banana.center_y) # the snake locates the banana(food)
