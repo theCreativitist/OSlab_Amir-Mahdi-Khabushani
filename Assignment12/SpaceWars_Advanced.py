@@ -11,6 +11,8 @@ EXPLOSION_TEXTURES = []
 for t in range(17):
     EXPLOSION_TEXTURES.append(arcade.load_texture('explosion/explosion-%s.png' %str(t+1)))
 UPDATES_PER_FRAME = 3
+BULLET_TEXTURE = arcade.load_texture(':resources:images/space_shooter/laserRed01.png')
+BOSS_BULLET_TEXTURE = arcade.load_texture(':resources:images/space_shooter/laserBLUE01.png')
 
 class SpaceCraft(arcade.Sprite):
     def __init__(self):
@@ -34,6 +36,7 @@ class SpaceCraft(arcade.Sprite):
 
     def fire(self):
         self.bullets.append(Bullet(self))
+        arcade.play_sound(arcade.sound.Sound(':resources:sounds/laser4.wav'), 0.2)
 
     def move(self):
         self.center_x += self.speed * self.change_x
@@ -60,7 +63,8 @@ class Heart(arcade.Sprite):
 
 class Bullet(arcade.Sprite):
     def __init__(self, host):
-        super().__init__(":resources:images/space_shooter/laserRed01.png")
+        super().__init__()
+        self.texture = BULLET_TEXTURE
         self.width = 10
         self.height = 20
         self.center_x = host.center_x
@@ -73,9 +77,18 @@ class Bullet(arcade.Sprite):
         self.center_x -= self.speed * math.sin(rad)
         self.center_y += self.speed * math.cos(rad)
 
-    def play_sound(self):
-        arcade.play_sound(arcade.sound.Sound(':resources:sounds/laser4.wav'), 0.2)    
 
+class BossBullet(Bullet):
+    def __init__(self,host):
+        super().__init__(host)
+        self.texture = BOSS_BULLET_TEXTURE
+        self.speed = 10
+        self.angle = self.angle + 90
+    
+    def move(self):
+        rad = math.radians(self.angle - 90)
+        self.center_x -= self.speed * math.sin(rad)
+        self.center_y += self.speed * math.cos(rad)
 
 
 class Enemy(arcade.Sprite):
@@ -91,8 +104,6 @@ class Enemy(arcade.Sprite):
     def move(self):
         self.center_y -= self.speed
 
-    def explode(self):
-        arcade.play_sound(arcade.sound.Sound(':resources:sounds/explosion1.wav'))
 
 
 class Boss(arcade.Sprite):
@@ -102,14 +113,46 @@ class Boss(arcade.Sprite):
         self.height = ENEMY_HEIGHT * 2
         self.angle = 180
         self.center_x = SCREEN_WIDTH // 2
-        self.center_y = SCREEN_HEIGHT - self.height//2
-        self.speed = 10
+        self.center_y = SCREEN_HEIGHT + self.height//2 + 50
+        self.change_x = 1
+        self.speed = 4
+        self.bullets = []
+        self.bullet_interval = 30
+        self.cur_bullet = 0
+        self.health = 20
+        self.is_awake = False
 
+    def move(self): #TODO refine
+        if self.center_y > SCREEN_HEIGHT - self.height//2 - 15:
+            self.center_y -= 1
+        else:
+            self.center_x += self.change_x * self.speed
+            if self.center_x - self.width // 2 < 0 or self.center_x + self.width // 2 > SCREEN_WIDTH:
+                self.change_x = -self.change_x
+
+    def fire(self):
+        if not self.center_y > SCREEN_HEIGHT - self.height//2 - 15:
+            self.cur_bullet += 1
+            if self.cur_bullet == self.bullet_interval:
+                self.bullets.append(BossBullet(self))
+                arcade.play_sound(arcade.sound.Sound(':resources:sounds/laser3.wav'), 0.2)
+                self.cur_bullet = 0
+
+    def decrease_health(self):
+        self.health -= 1
+
+    def is_alive(self):
+        if self.health > 0:
+            return True
+        else:
+            return False
+        
 
 
 class Explosion(arcade.Sprite):
     def __init__(self, host):
         super().__init__()
+        arcade.play_sound(arcade.sound.Sound(':resources:sounds/explosion1.wav'))
         #self.width = host.width
         #self.height = host.height
         self.center_x = host.center_x
@@ -150,6 +193,7 @@ class Game(arcade.Window):
         self.enemies.clear()
         self.e_speed = 3
         self.me = SpaceCraft()
+        self.boss = Boss()
         
     def on_draw(self):
         if self.me.is_alive():
@@ -159,10 +203,21 @@ class Game(arcade.Window):
                 enemy.draw()
             for b in self.me.bullets:
                 b.draw()
+            if self.boss.is_awake:
+                for bb in self.boss.bullets:
+                    bb.draw()
             for ex in self.explosions:
                 ex.draw()
-            self.boss.draw()
+            if self.boss.is_awake:
+                self.boss.draw()
+            
             arcade.draw_text(str(self.me.score), start_x= SCREEN_WIDTH-50 , start_y= 20 , font_size=25) 
+            
+            if not self.boss.is_alive():
+                arcade.Window.clear(self)
+                arcade.draw_text("YOU WON!", 50, SCREEN_HEIGHT//2, font_size=30)
+                arcade.draw_text("Press R to restart the game.", 30, SCREEN_HEIGHT//2 - 150, font_size=30)
+                self.enemies.clear()
 
         else:
             arcade.Window.clear(self)
@@ -173,8 +228,7 @@ class Game(arcade.Window):
     def on_key_press(self, symbol: int, modifiers: int):
         if symbol == arcade.key.SPACE:
             if self.me.is_alive():
-                self.me.fire() 
-                self.me.bullets[0].play_sound()
+                self.me.fire()
         elif symbol == arcade.key.LEFT:
             self.me.change_angle = 1
         elif symbol == arcade.key.RIGHT:
@@ -193,13 +247,36 @@ class Game(arcade.Window):
             self.me.change_x = 0
 
     def on_update(self, delta_time: float):
-        if self.me.is_alive:
+        if self.me.is_alive() and self.boss.is_alive():
+
+            if not self.boss.is_awake:
+                if self.me.score > 9:
+                    self.boss.is_awake = True
+            
             self.me.rotate()
             self.me.move()
+            if self.boss.is_awake:
+                self.boss.move()
+                self.boss.fire()
+                for bb in self.boss.bullets:
+                    bb.move()
+                    if bb.center_x > SCREEN_WIDTH or bb.center_x < 0 or bb.center_y > SCREEN_HEIGHT or bb.center_y < 0:
+                        self.boss.bullets.remove(bb)
+                    elif arcade.check_for_collision(self.me, bb):
+                        self.boss.bullets.remove(bb)
+                        self.me.hearts.pop()
+                        self.explosions.append(Explosion(self.me))
+                        arcade.play_sound(arcade.sound.Sound(':resources:sounds/gameover2.wav'), 0.2)
+            
             for b in self.me.bullets:
                 b.move()
                 if b.center_x > SCREEN_WIDTH or b.center_x < 0 or b.center_y > SCREEN_HEIGHT or b.center_y < 0:
                     self.me.bullets.remove(b)
+                if self.boss.is_awake:
+                    if arcade.check_for_collision(b, self.boss):
+                        self.me.bullets.remove(b)
+                        self.explosions.append(Explosion(self.boss))
+                        self.boss.decrease_health()
 
             for ex in self.explosions:
                 ex.update_animation()
@@ -222,7 +299,6 @@ class Game(arcade.Window):
                     arcade.play_sound(arcade.sound.Sound(':resources:sounds/gameover5.wav'), 0.2)
                 for b in self.me.bullets:
                     if arcade.check_for_collision(e,b):
-                        e.explode()
                         self.explosions.append(Explosion(e))
                         self.enemies.remove(e)
                         self.me.bullets.remove(b)
