@@ -15,12 +15,13 @@ class Snake(arcade.Sprite):
         self.score = 0 
         self.center_x = SCREEN_WIDTH // 2 
         self.center_y = SCREEN_HEIGHT // 2
-        self.speed = 8
+        self.speed = 10
         self.body = []
         self.goal_x = 0
         self.goal_y = 0
         self.goal_x_range = []
         self.goal_y_range = []
+        self.error = self.speed // 2
 
     def move(self):
         self.body.append([self.center_x,self.center_y])
@@ -42,18 +43,19 @@ class Snake(arcade.Sprite):
     def observe(self, banana_x, banana_y):
         self.goal_x = banana_x
         self.goal_y = banana_y
-
         #below code is to fix the bug where the snake is stuck at goal_x
         self.goal_x_range = []
         self.goal_y_range = []
-        error = self.speed // 2
-        for i in range(error+1):
+        for i in range(self.error+1):
             self.goal_x_range.append(banana_x+i)
             self.goal_x_range.append(banana_x-i)
             self.goal_y_range.append(banana_y+i)
             self.goal_y_range.append(banana_y-i)
 
     def decide_move(self):
+
+        self.collide_with_self()
+        
         if self.center_x in self.goal_x_range :
             if self.goal_y > self.center_y:
                 self.change_y = 1
@@ -70,7 +72,21 @@ class Snake(arcade.Sprite):
                 self.change_y = 0
         
             
+    def collide_with_self(self):
+        if self.change_x == 1:
+            if [self.center_x + self.error, self.center_y] in self.body:
+                print('shit')
+        elif self.change_x == -1:
+            if [self.center_x - self.error, self.center_y] in self.body:
+                print('shit')
+        elif self.change_y == 1:
+            if [self.center_x, self.center_y + self.error] in self.body:
+                print('shit')
+        elif self.change_y == -1:
+            if [self.center_x, self.center_y - self.error] in self.body:
+                print('shit')
 
+    
     def draw(self):
         arcade.draw_rectangle_filled(self.center_x, self.center_y, self.width, self.height, self.color)
 
@@ -153,9 +169,10 @@ class Game(arcade.Window):
         self.banana.draw()
         self.poop.draw()
 
+    
     '''
     def on_key_release(self, key: int, modifiers: int): 
-        if key == arcade.key.LEFT: 
+       if key == arcade.key.LEFT: 
             self.snake.change_x = -1
             self.snake.change_y = 0
         elif key == arcade.key.RIGHT: 
@@ -168,6 +185,7 @@ class Game(arcade.Window):
             self.snake.change_y = -1
             self.snake.change_x = 0
             '''
+            
 
     def on_update(self, delta_time):
 
