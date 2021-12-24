@@ -13,6 +13,7 @@ for t in range(17):
 UPDATES_PER_FRAME = 3
 BULLET_TEXTURE = arcade.load_texture(':resources:images/space_shooter/laserRed01.png')
 BOSS_BULLET_TEXTURE = arcade.load_texture(':resources:images/space_shooter/laserBLUE01.png')
+SCORE_TO_REACH_BOSS = 10
 
 class SpaceCraft(arcade.Sprite):
     def __init__(self):
@@ -120,6 +121,7 @@ class Boss(arcade.Sprite):
         self.bullet_interval = 30
         self.cur_bullet = 0
         self.health = 20
+        self.max_health = 20
         self.is_awake = False
 
     def move(self): #TODO refine
@@ -140,6 +142,12 @@ class Boss(arcade.Sprite):
 
     def decrease_health(self):
         self.health -= 1
+
+    def draw_health_bar(self):
+        health_width = (self.health/self.max_health) * (SCREEN_WIDTH - 100)
+        arcade.draw_rectangle_filled(SCREEN_WIDTH//2, SCREEN_HEIGHT - 10, SCREEN_WIDTH - 100, 10, arcade.color.RED)
+        arcade.draw_rectangle_filled(SCREEN_WIDTH//2, SCREEN_HEIGHT - 10, health_width, 8, arcade.color.GREEN)
+
 
     def is_alive(self):
         if self.health > 0:
@@ -210,6 +218,7 @@ class Game(arcade.Window):
                 ex.draw()
             if self.boss.is_awake:
                 self.boss.draw()
+                self.boss.draw_health_bar()
             
             arcade.draw_text(str(self.me.score), start_x= SCREEN_WIDTH-50 , start_y= 20 , font_size=25) 
             
@@ -250,7 +259,7 @@ class Game(arcade.Window):
         if self.me.is_alive() and self.boss.is_alive():
 
             if not self.boss.is_awake:
-                if self.me.score > 9:
+                if self.me.score >= SCORE_TO_REACH_BOSS:
                     self.boss.is_awake = True
             
             self.me.rotate()
